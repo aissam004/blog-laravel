@@ -6,7 +6,9 @@ use App\Models\Tag;
 use App\Models\Post;
 use App\Models\User;
 
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
@@ -22,7 +24,7 @@ class PostController extends Controller
      }
     public function index()
     {
-        $posts=Post::with(['user','tags'])->paginate(10);
+        $posts=Post::with(['user','tags'])->latest()->paginate(10);
         $tags=Tag::all();
         $users=User::all();
         return view('posts.index',compact('posts','tags','users'));
@@ -33,10 +35,10 @@ class PostController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create($id)
+    public function create()
     {
         $tags= Tag::all();
-        return view('users.posts.edit',compact($tags));
+        return view('posts.edit',compact('tags'));
     }
 
     /**
@@ -45,20 +47,29 @@ class PostController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request,$id)
+    public function store(Request $request)
     {
-        if(!Gate::allows('store-post',$id)){
-            abort(403);
-        }
 
         $request->validate([
-            'title' => 'max:255',
-            'content' => 'max:255'
+            'title' => 'required|max:255',
+            'content' => 'required'
         ]);
+        if($request->has('imagePath')){
+            $imagePath = $request->imagePath->store("public/images");
 
-        $user=User::findOrFail($id);
+        }
 
-        return redirect()->back()->with('success','New post has added!');
+        $post=new Post([
+            'title'=>$request->title,
+            'slug'=>Str::slug(($request->title)),
+            'content'=>$request->content,
+            'imagePath'=> $imagePath
+        ]);
+        $post->user_id=Auth::id();
+
+        $post->save();
+        $post->tags()->sync($request->tags);
+        return redirect('/posts')->with('success','New post has added!');
     }
 
     /**
@@ -80,7 +91,11 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        //
+        if (! Gate::allows('update-post', $post)) {
+            abort(403,"You are not able to edit this post");
+        }
+        $tags= Tag::all();
+        return view('posts.edit',compact('tags','post'));
     }
 
     /**

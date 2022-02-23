@@ -52,7 +52,7 @@ class TagController extends Controller
 
         $tags=Tag::all();
         $users=User::all();
-        $posts=$tag->posts()->paginate(5);
+        $posts=$tag->posts()->latest()->paginate(5);
 
         return view('posts.index',compact('posts','tags','users','tag'));
     }

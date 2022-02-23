@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('title');
             $table->string('slug');
             $table->text('content');
+            $table->text('imagePath')->nullable()->default(null);
             $table->foreignIdFor(User::class);
             $table->timestamps();
         });

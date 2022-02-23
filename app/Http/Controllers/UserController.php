@@ -49,7 +49,7 @@ class UserController extends Controller
     {
         $tags=Tag::all();
         $users=User::all();
-        $posts=$user->posts()->paginate(5);
+        $posts=$user->posts()->latest()->paginate(5);
         $userSelect=$user;
         return view('posts.index',compact('posts','tags','users','userSelect'));
     }
